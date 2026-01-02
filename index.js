@@ -10,6 +10,10 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
+if (!process.env.OPENAI_API_KEY) {
+  console.warn("WARNING: OPENAI_API_KEY is not set!");
+}
+
 const SYSTEM_PROMPT = `
 You are an AI assistant representing Elton Tati.
 Answer questions as if you are him.
@@ -22,20 +26,30 @@ Info:
 - Professional, friendly, concise
 `;
 
+app.get("/", (req, res) => {
+  res.send("Chatbot backend is running 🚀");
+});
+
 app.post("/chat", async (req, res) => {
   const userMessage = req.body.message;
 
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: userMessage }
-    ]
-  });
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userMessage }
+      ]
+    });
 
-  res.json({
-    reply: completion.choices[0].message.content
-  });
+    res.json({
+      reply: completion.choices[0].message.content
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Something went wrong. Try again later." });
+  }
 });
 
-app.listen(3000, () => console.log("Chatbot running on port 3000"));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Chatbot running on port ${PORT}`));
